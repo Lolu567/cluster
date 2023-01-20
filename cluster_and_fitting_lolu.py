@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import scipy.optimize as opt
 import err_ranges as err
 from sklearn.cluster import KMeans
+from scipy import interpolate
 
 
 
@@ -76,21 +77,31 @@ df_clustering = df1.loc[df1.index, ["Country Name", "1980", "2020"]]
 x = df_clustering
 x = x.dropna().values
 plt.figure()
-plt.scatter(x[:,1], x[:,2])
-plt.savefig('raw_data.png')
+plt.scatter(x[:,1], x[:,2], label='data')
+plt.xlabel('2020')
+plt.ylabel('1980')
+plt.title('Original data')
+plt.legend()
+plt.savefig('ade-raw_data.png')
 plt.show()
 
 
 #determine the elbow which is to be used as the cluster
-wcss = []
+SSE = []
 
 for i in range(1, 11):
     kmeans = KMeans(n_clusters=i)
     kmeans.fit(x[:,1:2])
-    wcss.append(kmeans.inertia_)
+    SSE.append(kmeans.inertia_)
     
-plt.plot(range(1, 11), wcss)
-plt.savefig('cluster.png')
+plt.figure(figsize=(15, 11))
+plt.plot(range(1, 11), SSE, label='cluster')
+plt.xlabel('Number of clusters', fontsize=30)
+plt.ylabel('SSE', fontsize=30)
+plt.title('Elbow Method', fontsize=30)
+plt.tick_params(axis='both', labelsize=30)
+plt.legend(fontsize=30)
+plt.savefig('ade-number of cluster.png')
 plt.show()
 
 
@@ -142,10 +153,10 @@ def plot_clusters(samples, clusters):
         plt.scatter(samples[sample][1], samples[sample][2], 
                     color = colors[sample], marker=markers[sample], s=50)
     plt.scatter(df_centriod[0], df_centriod[1], c='black', marker='x', s=100)
-    plt.xlabel(cluster_year[0])
-    plt.ylabel(cluster_year[1])
+    plt.xlabel(cluster_year[1])
+    plt.ylabel(cluster_year[0])
     plt.title('Cluster of Population Growth')
-    plt.savefig('clustered_data.png')
+    plt.savefig('ade-clustered_data.png')
     plt.show()
 
 plot_clusters(x, km_clusters)
@@ -185,6 +196,7 @@ print(low, up)
 print('covar = ', covar)
 
 # plot input vs output
+plt.figure(figsize=(15, 11))
 plt.plot(x, y)
 
 # define a sequence of inputs between the smallest and largest known inputs
@@ -193,13 +205,38 @@ x_line = np.arange(min(x), max(x) + 1, 1)
 
 # calculate the output for the range
 y_line = objective(x_line, a, b, c, d)
+# Use interp1d to create a function for interpolating y values
+interp_func = interpolate.interp1d(x_line.flatten(), y_line)
+
+#initialize a list to add the population growth predictions
+prediction = [] 
+predict = float(format(interp_func(2019), '.3f'))
+prediction.append(predict)
+
+# print out the value of the prediction
+print('prediction', prediction)
+
 
 
 # create a line plot for the mapping function
 plt.plot(x_line, y_line, '--', color='red')
+plt.scatter(2019, prediction, marker=('x'), s=200, color='black', 
+            label=f"pop growth of {2019} growth is {predict}.")
 #plt.savefig('curve_fit.png')
-#plt.show()
-#plt.plot(x_line, y_line, '--', color='red')
-plt.fill_between(x, low, up, alpha=0.7, color='green')
-plt.savefig('with error ranges.png')
+plt.xlabel('years', fontsize=30)
+plt.ylabel('population growth', fontsize=30)
+plt.title('curve fit', fontsize=30)
+plt.legend(fontsize=30)
+plt.savefig('ade-curve_fit.png')
+plt.show()
+
+plt.figure(figsize=(15, 11))
+plt.plot(x, y, label='pop growth')
+plt.plot(x_line, y_line, '--', color='red', label='curve fit')
+plt.fill_between(x, low, up, alpha=0.7, color='blue', label='error range')
+plt.xlabel('years', fontsize=30)
+plt.ylabel('population growth', fontsize=30)
+plt.title('curve fit with error range', fontsize=30)
+plt.legend(fontsize=30)
+plt.savefig('ade-with error ranges.png')
 plt.show()
